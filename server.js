@@ -3,9 +3,11 @@
 import express from "express";
 import dotenv from "dotenv"; // require package
 import mongoose from "mongoose";
-import Fruit from "./models/fruit.js";
 import methodOverride from "method-override";
 import logger from "morgan";
+
+// controllers imports
+import * as fruitsCtrl from "./controllers/fruits.js";
 
 dotenv.config(); // Loads the environment variables from .env file
 const app = express();
@@ -15,56 +17,18 @@ app.use(logger("dev"));
 
 mongoose.connect(process.env.MONGODB_URI);
 
-// GET /
-app.get("/", async (req, res) => {
-  res.render("index.ejs");
-});
-
-app.get("/fruits/new", async (req, res) => {
-  res.render("fruits/new.ejs");
-});
-
-app.get("/fruits", async (req, res) => {
-  const allFruits = await Fruit.find();
-  res.render("fruits/index.ejs", { fruits: allFruits });
-});
-
-app.get("/fruits/:id", async (req, res) => {
-  const foundFruit = await Fruit.findById(req.params.id);
-
-  res.render("fruits/show.ejs", { fruit: foundFruit });
-});
-
-app.post("/fruits", async (req, res) => {
-  if (req.body.isReadyToEat === "on") {
-    req.body.isReadyToEat = true;
-  } else {
-    req.body.isReadyToEat = false;
-  }
-
-  await Fruit.create(req.body);
-  res.redirect("/fruits");
-});
-
-app.get("/fruits/:fruitId/edit", async (req, res) => {
-  const foundFruit = await Fruit.findById(req.params.fruitId);
-  res.render(`fruits/edit.ejs`, { fruit: foundFruit });
-});
-
-app.put("/fruits/:id", async (req, res) => {
-  if (req.body.isReadyToEat === "on") {
-    req.body.isReadyToEat = true;
-  } else {
-    req.body.isReadyToEat = false;
-  }
-  console.log(await Fruit.findByIdAndUpdate(req.params.id, req.body));
-  res.render("/fruits/edit.ejs");
-});
-
-app.delete("/fruits/:id", async (req, res) => {
-  console.log(await Fruit.findByIdAndDelete(req.params.id));
-  res.redirect("/fruits");
-});
+// GET
+app.get("/", fruitsCtrl.renderHome);
+app.get("/fruits/new", fruitsCtrl.renderNewForm);
+app.get("/fruits", fruitsCtrl.index);
+app.get("/fruits/:id", fruitsCtrl.show);
+app.get("/fruits/:fruitId/edit", fruitsCtrl.edit);
+//POST
+app.post("/fruits", fruitsCtrl.create);
+//UPDATE
+app.put("/fruits/:id", fruitsCtrl.update);
+//DELETE
+app.delete("/fruits/:id", fruitsCtrl.destroy);
 
 mongoose.connection.on("connected", () => {
   console.log(`Connected to MongoDB ${mongoose.connection.name}.`);
